@@ -20,7 +20,7 @@ The **Nucleus Chart** uses a deterministic radial-distribution algorithm. When p
 ### Installation
 ```bash
 npm install nucleus-chart
-
+```bash
 ## Basic Usages
 
 import { Nucleus } from 'nucleus-chart';
