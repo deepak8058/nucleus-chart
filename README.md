@@ -25,7 +25,7 @@ The **Nucleus Chart** maintains data integrity by keeping the coordinates exact 
 ### Installation
 ```bash
 npm install nucleus-chart
-
+```
 
 ---
 
