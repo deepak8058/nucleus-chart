@@ -58,7 +58,8 @@ Dynamic Hub Scaling: The Nucleus Hub grows visually based on the number of point
 
 Smart Anchor Flipping: Text automatically aligns left or right based on its angle to prevent overlaps.
 
-🗺 Roadmap
+## 🗺 Roadmap
+
 [ ] D3.js Wrapper: Seamless integration with D3 patterns.
 
 [ ] React Hooks: A useNucleus hook for reactive updates.
@@ -67,6 +68,6 @@ Smart Anchor Flipping: Text automatically aligns left or right based on its angl
 
 [ ] Interactive Explosion: Animate spokes on hover.
 
-📄 License
+## 📄 License
 MIT © 2026 Deepak Kumar Jain
 ---
