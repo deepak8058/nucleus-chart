@@ -1,14 +1,18 @@
+/**
+ * Nucleus Chart Engine
+ * Logic for handling overplotting via deterministic radial projection.
+ */
 export class Nucleus {
     constructor(canvasSelector, options = {}) {
         this.canvas = document.querySelector(canvasSelector);
         if (!this.canvas) throw new Error(`Canvas element ${canvasSelector} not found.`);
         this.ctx = this.canvas.getContext('2d');
         
-        // Configuration Defaults
-        this.fusionRadius = options.fusionRadius || 30;
-        this.spokeLength = options.spokeLength || 70;
-        this.hubColor = options.hubColor || '#6366f1';
-        this.labelColor = options.labelColor || '#1e293b';
+        // Configuration
+        this.fusionRadius = options.fusionRadius || 40;
+        this.spokeLength = options.spokeLength || 80;
+        this.accentColor = options.hubColor || '#818cf8'; // Primary color for hub/spokes
+        this.labelColor = options.labelColor || '#ffffff'; // White labels for dark bg
     }
 
     render(data) {
@@ -20,32 +24,43 @@ export class Nucleus {
             
             // Draw the Nucleus Hub
             this.ctx.beginPath();
-            this.ctx.arc(cluster.x, cluster.y, 6 + (n * 1.5), 0, Math.PI * 2);
-            this.ctx.fillStyle = n > 1 ? this.hubColor : '#94a3b8';
+            // Hub gets larger with more mass
+            const hubRadius = 6 + (n * 1.5);
+            this.ctx.arc(cluster.x, cluster.y, hubRadius, 0, Math.PI * 2);
+            this.ctx.fillStyle = n > 1 ? this.accentColor : '#64748b'; // Gray for single points
             this.ctx.fill();
 
+            // Symmetrical Spokes (Petals)
             if (n > 1) {
+                // Adjust spoke length based on density
+                const effectiveSpokeLength = this.spokeLength + (n * 3);
+                
                 cluster.points.forEach((p, i) => {
-                    const angle = (i * 2 * Math.PI) / n;
-                    const endX = cluster.x + this.spokeLength * Math.cos(angle);
-                    const endY = cluster.y + this.spokeLength * Math.sin(angle);
+                    // Divide 360 degrees by number of points
+                    const angle = (i * 2 * Math.PI) / n; 
+                    const endX = cluster.x + effectiveSpokeLength * Math.cos(angle);
+                    const endY = cluster.y + effectiveSpokeLength * Math.sin(angle);
 
-                    // Draw Spoke Line
+                    // Draw the Spoke (Wheel Design)
                     this.ctx.beginPath();
                     this.ctx.moveTo(cluster.x, cluster.y);
                     this.ctx.lineTo(endX, endY);
-                    this.ctx.strokeStyle = 'rgba(99, 102, 241, 0.3)';
+                    this.ctx.lineWidth = 1.5; // Thicker lines for 'spoke' look
+                    this.ctx.strokeStyle = `rgba(129, 140, 248, 0.5)`; // Semi-transparent accent
+                    this.ctx.lineCap = 'round'; // Smooth ends
                     this.ctx.stroke();
 
-                    // Draw Label with Smart Alignment
+                    // Draw the Label
                     this.ctx.fillStyle = this.labelColor;
-                    this.ctx.font = '12px sans-serif';
+                    this.ctx.font = '12px "Inter", "Segoe UI", sans-serif';
+                    // Smart text anchor logic
                     this.ctx.textAlign = endX > cluster.x ? 'left' : 'right';
-                    this.ctx.fillText(p.label, endX + (endX > cluster.x ? 5 : -5), endY + 5);
+                    this.ctx.fillText(p.label, endX + (endX > cluster.x ? 8 : -8), endY + 4);
                 });
             } else {
                 // Single point labeling
                 this.ctx.fillStyle = this.labelColor;
+                this.ctx.font = '12px "Inter", "Segoe UI", sans-serif';
                 this.ctx.fillText(cluster.points[0].label, cluster.x + 10, cluster.y - 10);
             }
         });
