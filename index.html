@@ -3,43 +3,48 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nucleus Chart | Interactive Lab</title>
+    <title>Nucleus Chart | High-Fidelity Data Lab</title>
     <style>
-        :root { --primary: #6366f1; --bg: #0f172a; --panel: #1e293b; }
-        body { font-family: 'Inter', sans-serif; background: var(--bg); color: white; margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root { --primary: #818cf8; --bg: #030712; --panel: #111827; --text-main: #f1f5f9; }
+        body { font-family: 'Segoe UI', 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Sidebar Styles */
-        #controls { width: 300px; background: var(--panel); padding: 2rem; border-right: 1px solid #334155; display: flex; flex-direction: column; gap: 1.5rem; }
-        h1 { font-size: 1.5rem; margin: 0; color: var(--primary); }
-        p { font-size: 0.9rem; color: #94a3b8; line-height: 1.5; }
+        /* Control Panel Styles */
+        #controls { width: 320px; background: var(--panel); padding: 2rem; border-right: 1px solid #1f2937; display: flex; flex-direction: column; gap: 1.5rem; }
+        h1 { font-size: 1.5rem; margin: 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
+        p { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; }
         
-        /* Canvas Area */
+        /* Canvas Viewport */
         #viewport { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; cursor: crosshair; }
-        canvas { background: #020617; border-radius: 8px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); }
+        canvas { background: #000000; border: 1px solid #1f2937; border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.6); }
         
-        .badge { background: rgba(99, 102, 241, 0.2); color: var(--primary); padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: bold; }
-        button { background: var(--primary); color: white; border: none; padding: 10px; border-radius: 6px; cursor: pointer; font-weight: bold; }
-        button:hover { opacity: 0.9; }
+        .badge { background: rgba(129, 140, 248, 0.15); color: var(--primary); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; align-self: start; }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; margin-top: auto; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); }
     </style>
 </head>
 <body>
 
     <div id="controls">
         <h1>🧬 Nucleus Chart</h1>
-        <span class="badge">v1.0.0 Open Source</span>
-        <p>Traditional charts suffer from "Label Soup." The Nucleus Chart uses deterministic radial projection to keep data readable.</p>
+        <span class="badge">A New Visualization Standard</span>
+        <p>Stop the Label Soup. The Nucleus Chart handles 100 perfectly overlapping points without jittering or unreadable clutter.</p>
         
-        <hr style="border: 0; border-top: 1px solid #334155; width: 100%;">
+        <hr style="border: 0; border-top: 1px solid #1f2937; width: 100%;">
         
         <div>
-            <label style="display:block; margin-bottom: 5px; font-size: 0.8rem;">Fusion Radius (px)</label>
+            <label style="display:block; margin-bottom: 7px; font-size: 0.8rem; color: #94a3b8;">Fusion Radius (px)</label>
             <input type="range" id="radiusRange" min="10" max="100" value="40" style="width:100%">
+        </div>
+
+        <div>
+            <label style="display:block; margin-bottom: 7px; font-size: 0.8rem; color: #94a3b8;">Spoke Length (px)</label>
+            <input type="range" id="spokeRange" min="40" max="150" value="80" style="width:100%">
         </div>
 
         <button id="clearBtn">Clear Canvas</button>
         
-        <div style="margin-top: auto; font-size: 0.8rem; color: #64748b;">
-            <strong>Pro Tip:</strong> Click anywhere on the dark canvas to add overlapping points and watch the "Spokes" emerge.
+        <div style="margin-top: 1.5rem; font-size: 0.8rem; color: #64748b; border-top: 1px solid #1f2937; padding-top: 1rem;">
+            <strong>Pro Tip:</strong> Click the dark canvas to add overplotted points and watch the "Wheel Spokes" emerge.
         </div>
     </div>
 
@@ -52,17 +57,20 @@
 
         const canvas = document.getElementById('nucleusCanvas');
         const radiusInput = document.getElementById('radiusRange');
+        const spokeInput = document.getElementById('spokeRange');
         const clearBtn = document.getElementById('clearBtn');
         
         let dataPoints = [
-            { x: 450, y: 300, label: "Sample A" },
-            { x: 450, y: 300, label: "Sample B" }
+            { x: 450, y: 300, label: "Core Feature Alpha" },
+            { x: 450, y: 300, label: "Secondary Module Beta" },
+            { x: 600, y: 150, label: "Isolated Node" }
         ];
 
         let chart = new Nucleus('#nucleusCanvas', { 
             fusionRadius: parseInt(radiusInput.value), 
-            spokeLength: 80,
-            hubColor: '#818cf8' 
+            spokeLength: parseInt(spokeInput.value),
+            hubColor: '#818cf8', // Indigo hub
+            labelColor: '#ffffff' // Pure white labels
         });
 
         // Initial Render
@@ -77,19 +85,23 @@
             dataPoints.push({
                 x: x,
                 y: y,
-                label: `Point #${dataPoints.length + 1}`
+                label: `Entry #${dataPoints.length + 1}`
             });
             
             chart.render(dataPoints);
         });
 
-        // Update Radius Dynamically
+        // Handle Controls
         radiusInput.addEventListener('input', (e) => {
             chart.fusionRadius = parseInt(e.target.value);
             chart.render(dataPoints);
         });
 
-        // Clear
+        spokeInput.addEventListener('input', (e) => {
+            chart.spokeLength = parseInt(e.target.value);
+            chart.render(dataPoints);
+        });
+
         clearBtn.addEventListener('click', () => {
             dataPoints = [];
             chart.render(dataPoints);
