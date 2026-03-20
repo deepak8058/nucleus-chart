@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Nucleus Chart Live Demo</title>
+    <style>
+        body { font-family: sans-serif; display: flex; flex-direction: column; align-items: center; background: #f4f7f6; }
+        canvas { background: white; border: 1px solid #ccc; box-shadow: 0 4px 6px rgba(0,0,0,0.1); margin-top: 20px; }
+        h1 { color: #1e293b; }
+    </style>
+</head>
+<body>
+    <h1>🧬 Nucleus Chart Live Demo</h1>
+    <p>Watch how overlapping points transform into organized spokes.</p>
+    <canvas id="myCanvas" width="800" height="500"></canvas>
+
+    <script type="module">
+        import { Nucleus } from './index.js';
+
+        const data = [
+            { x: 400, y: 250, label: "Point Alpha" },
+            { x: 400, y: 250, label: "Point Beta" },
+            { x: 400, y: 250, label: "Point Gamma" },
+            { x: 400, y: 250, label: "Point Delta" },
+            { x: 400, y: 250, label: "Point Epsilon" },
+            { x: 600, y: 150, label: "Isolated Point" }
+        ];
+
+        const chart = new Nucleus('#myCanvas', { fusionRadius: 40, spokeLength: 100 });
+        chart.render(data);
+    </script>
+</body>
+</html>
