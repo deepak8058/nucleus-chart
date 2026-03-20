@@ -69,5 +69,6 @@ Smart Anchor Flipping: Text automatically aligns left or right based on its angl
 [ ] Interactive Explosion: Animate spokes on hover.
 
 ## 📄 License
+
 MIT © 2026 Deepak Kumar Jain
 ---
