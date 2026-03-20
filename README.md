@@ -20,20 +20,3 @@ The **Nucleus Chart** uses a deterministic radial-distribution algorithm. When p
 ### Installation
 ```bash
 npm install nucleus-chart
-```bash
-## Basic Usages
-
-import { Nucleus } from 'nucleus-chart';
-
-const data = [
-  { x: 100, y: 100, label: "Point A" },
-  { x: 100, y: 100, label: "Point B" }, // Exact overlap!
-  { x: 102, y: 98,  label: "Point C" }  // Near collision
-];
-
-const chart = new Nucleus('#my-canvas', {
-  fusionRadius: 30,
-  spokeLength: 70
-});
-
-chart.render(data);
