@@ -9,9 +9,9 @@ In traditional scatter plots, 100 points at the same $(x, y)$ coordinate look li
 
 ## 🔵 The Solution: The Nucleus Logic
 The **Nucleus Chart** uses a deterministic radial-distribution algorithm. When points collide:
-1. They fuse into a single **Nucleus Hub**.
-2. Labels are projected outward along **Symmetrical Spokes**.
-3. Data integrity is maintained while legibility is guaranteed.
+1.  **Fuse:** They merge into a single, glowing **Nucleus Hub**.
+2.  **Project:** Labels are projected outward along **Symmetrical Spokes**.
+3.  **Preserve:** Data integrity is maintained while legibility is guaranteed.
 
 ---
 
@@ -20,35 +20,3 @@ The **Nucleus Chart** uses a deterministic radial-distribution algorithm. When p
 ### Installation
 ```bash
 npm install nucleus-chart
-
-import { Nucleus } from 'nucleus-chart';
-
-const data = [
-  { x: 100, y: 100, label: "Point A" },
-  { x: 100, y: 100, label: "Point B" }, // Exact overlap!
-  { x: 102, y: 98,  label: "Point C" }  // Near collision
-];
-
-const chart = new Nucleus('#my-canvas', {
-  fusionRadius: 20,
-  spokeLength: 60
-});
-
-chart.render(data);
-
-🛠 Features
-Deterministic Positioning: No random jitter. Labels always land in the same spot.
-
-Collision Detection: Automatic detection of "Label Soup" zones.
-
-Smart Alignment: Text anchors automatically flip (left/right) based on their angle from the Nucleus.
-
-🗺 Roadmap
-[ ] D3.js Plugin Wrapper
-
-[ ] React Component Support
-
-[ ] Inter-Nucleus Collision (preventing spokes from hitting other clusters)
-
-📄 License
-MIT © 2026 [Your Name]
