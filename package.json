@@ -1,0 +1,14 @@
+{
+  "name": "nucleus-chart",
+  "version": "1.0.0",
+  "description": "A deterministic radial-labeling engine for scatter plots.",
+  "main": "index.js",
+  "type": "module",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/deepak8058/nucleus-chart.git"
+  },
+  "keywords": ["dataviz", "chart", "scatter-plot", "labels"],
+  "author": "Deepak Kumar Jain",
+  "license": "MIT"
+}
