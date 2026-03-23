@@ -8,108 +8,120 @@
         :root { --primary: #818cf8; --bg: #030712; --panel: #111827; --text-main: #f1f5f9; }
         body { font-family: 'Segoe UI', 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
         
-        /* Control Panel Styles */
         #controls { width: 320px; background: var(--panel); padding: 2rem; border-right: 1px solid #1f2937; display: flex; flex-direction: column; gap: 1.5rem; }
         h1 { font-size: 1.5rem; margin: 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
-        p { font-size: 0.9rem; color: #94a3b8; line-height: 1.6; }
+        p { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
         
-        /* Canvas Viewport */
         #viewport { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; cursor: crosshair; }
         canvas { background: #000000; border: 1px solid #1f2937; border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.6); }
         
         .badge { background: rgba(129, 140, 248, 0.15); color: var(--primary); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; align-self: start; }
-        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; margin-top: auto; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); }
+        .control-group { display: flex; flex-direction: column; gap: 8px; }
+        label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
+        
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary); }
+        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; margin-top: auto; transition: all 0.2s; }
+        button:hover { opacity: 0.9; transform: translateY(-1px); background: #6366f1; }
     </style>
 </head>
 <body>
 
     <div id="controls">
         <h1>🧬 Nucleus Chart</h1>
-        <span class="badge">A New Visualization Standard</span>
-        <p>Stop the Label Soup. The Nucleus Chart handles 100 perfectly overlapping points without jittering or unreadable clutter.</p>
+        <span class="badge">V2.0 GALACTIC ENGINE</span>
+        <p>A deterministic radial engine for "Label Soup." Click the canvas to add points.</p>
         
-        <hr style="border: 0; border-top: 1px solid #1f2937; width: 100%;">
-        
-        <div>
-            <label style="display:block; margin-bottom: 7px; font-size: 0.8rem; color: #94a3b8;">Fusion Radius (px)</label>
-            <input type="range" id="radiusRange" min="10" max="100" value="40" style="width:100%">
+        <div class="control-group">
+            <label for="radiusRange">Fusion Gravity</label>
+            <input type="range" id="radiusRange" min="10" max="120" value="50">
         </div>
 
-        <div>
-            <label style="display:block; margin-bottom: 7px; font-size: 0.8rem; color: #94a3b8;">Spoke Length (px)</label>
-            <input type="range" id="spokeRange" min="40" max="150" value="80" style="width:100%">
+        <div class="control-group">
+            <label for="spokeRange">Spoke Expansion</label>
+            <input type="range" id="spokeRange" min="40" max="200" value="85">
         </div>
 
-        <button id="clearBtn">Clear Canvas</button>
-        
-        <div style="margin-top: 1.5rem; font-size: 0.8rem; color: #64748b; border-top: 1px solid #1f2937; padding-top: 1rem;">
-            <strong>Pro Tip:</strong> Click the dark canvas to add overplotted points and watch the "Wheel Spokes" emerge.
+        <div class="control-group">
+            <label for="rotationRange">Orbital Rotation</label>
+            <input type="range" id="rotationRange" min="0" max="360" value="0">
         </div>
+
+        <button id="clearBtn">Wipe Universe</button>
     </div>
 
     <div id="viewport">
         <canvas id="nucleusCanvas" width="900" height="600"></canvas>
     </div>
 
-<script type="module">
-    // Add .js extension clearly
-    import { Nucleus } from './index.js'; 
+    <script type="module">
+        import { Nucleus } from './index.js';
 
-    const categoryColors = {
-        'Finance': '#4ade80', 
-        'Tech': '#60a5fa',    
-        'Health': '#f87171',  
-        'default': '#818cf8'
-    };
+        // Wait for DOM to be fully loaded
+        window.addEventListener('DOMContentLoaded', () => {
+            const canvas = document.getElementById('nucleusCanvas');
+            const radiusInput = document.getElementById('radiusRange');
+            const spokeInput = document.getElementById('spokeRange');
+            const rotationInput = document.getElementById('rotationRange');
+            const clearBtn = document.getElementById('clearBtn');
 
-    let dataPoints = [
-        { x: 300, y: 300, label: "Bank Alpha", category: "Finance", weight: 5 },
-        { x: 300, y: 300, label: "Server Beta", category: "Tech", weight: 2 },
-        { x: 300, y: 300, label: "Cloud Gamma", category: "Tech", weight: 3 },
-        { x: 600, y: 400, label: "Clinic Delta", category: "Health", weight: 4 },
-        { x: 650, y: 410, label: "Lab Epsilon", category: "Health", weight: 2 }
-    ];
+            const categoryColors = {
+                'Finance': '#4ade80', 
+                'Tech': '#60a5fa',    
+                'Health': '#f87171',  
+                'default': '#818cf8'
+            };
 
-    const canvas = document.getElementById('nucleusCanvas');
-    const radiusInput = document.getElementById('radiusRange');
-    const spokeInput = document.getElementById('spokeRange');
-    const rotationInput = document.getElementById('rotationRange');
-    const clearBtn = document.getElementById('clearBtn');
+            let dataPoints = [
+                { x: 450, y: 300, label: "Core Feature Alpha", category: "Tech", weight: 5 },
+                { x: 450, y: 300, label: "Secondary Module Beta", category: "Finance", weight: 2 },
+                { x: 650, y: 200, label: "Isolated Node", category: "Health", weight: 3 }
+            ];
 
-    // Initialize
-    let chart = new Nucleus('#nucleusCanvas', { 
-        categoryColors: categoryColors,
-        fusionRadius: parseInt(radiusInput.value),
-        spokeLength: parseInt(spokeInput.value),
-        rotationOffset: parseInt(rotationInput.value)
-    });
+            // Initialize the engine
+            const chart = new Nucleus('#nucleusCanvas', { 
+                categoryColors: categoryColors,
+                fusionRadius: parseInt(radiusInput.value), 
+                spokeLength: parseInt(spokeInput.value),
+                rotationOffset: parseInt(rotationInput.value)
+            });
 
-    // Drawing Loop
-    function update() {
-        chart.render(dataPoints);
-    }
-    update();
+            const render = () => chart.render(dataPoints);
+            render();
 
-    // Listeners
-    canvas.addEventListener('mousedown', (e) => {
-        const rect = canvas.getBoundingClientRect();
-        const cats = Object.keys(categoryColors);
-        dataPoints.push({
-            x: e.clientX - rect.left,
-            y: e.clientY - rect.top,
-            label: `SYSTEM ${dataPoints.length + 1}`,
-            category: cats[Math.floor(Math.random() * (cats.length - 1))],
-            weight: Math.floor(Math.random() * 5) + 1
+            // Interactivity
+            canvas.addEventListener('mousedown', (e) => {
+                const rect = canvas.getBoundingClientRect();
+                const cats = Object.keys(categoryColors);
+                dataPoints.push({
+                    x: e.clientX - rect.left,
+                    y: e.clientY - rect.top,
+                    label: `ENTRY_${dataPoints.length + 1}`,
+                    category: cats[Math.floor(Math.random() * (cats.length - 1))],
+                    weight: Math.floor(Math.random() * 4) + 1
+                });
+                render();
+            });
+
+            radiusInput.addEventListener('input', (e) => {
+                chart.fusionRadius = parseInt(e.target.value);
+                render();
+            });
+
+            spokeInput.addEventListener('input', (e) => {
+                chart.spokeLength = parseInt(e.target.value);
+                render();
+            });
+
+            rotationInput.addEventListener('input', (e) => {
+                chart.rotationOffset = parseInt(e.target.value);
+                render();
+            });
+
+            clearBtn.addEventListener('click', () => {
+                dataPoints = [];
+                render();
+            });
         });
-        update();
-    });
-
-    radiusInput.addEventListener('input', (e) => { chart.fusionRadius = parseInt(e.target.value); update(); });
-    spokeInput.addEventListener('input', (e) => { chart.spokeLength = parseInt(e.target.value); update(); });
-    rotationInput.addEventListener('input', (e) => { chart.rotationOffset = parseInt(e.target.value); update(); });
-    clearBtn.addEventListener('click', () => { dataPoints = []; update(); });
-</script>    
-
+    </script>
 </body>
 </html>
