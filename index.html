@@ -11,10 +11,10 @@
         canvas { width: 100%; height: 100%; cursor: crosshair; }
         .form-group { background: #1e293b; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
         label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: bold; }
-        input, select { background: #020617; border: 1px solid #334155; color: white; padding: 6px; border-radius: 4px; font-size: 0.8rem; }
+        input, select { background: #020617; border: 1px solid #334155; color: white; padding: 8px; border-radius: 4px; font-size: 0.8rem; }
         button { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        #editPopup { position: absolute; display: none; background: #1e293b; border: 1px solid var(--accent); padding: 15px; border-radius: 8px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        #coords { position: absolute; bottom: 10px; right: 10px; font-size: 0.7rem; font-family: monospace; color: var(--accent); }
+        .edit-mode { border: 2px solid #fbbf24 !important; }
+        #coords { position: absolute; bottom: 10px; right: 10px; font-size: 0.7rem; font-family: monospace; color: var(--accent); pointer-events: none; }
     </style>
 </head>
 <body>
@@ -22,59 +22,47 @@
 <div id="sidebar">
     <h2 style="color:var(--accent); margin:0; font-size:1.1rem;">NUCLEUS PRO</h2>
 
-    <div class="form-group">
-        <label>Add Data Point</label>
-        <input type="text" id="pLabel" placeholder="Label">
+    <div class="form-group" id="dataInputArea">
+        <label id="inputTitle">Add New Point</label>
+        <input type="text" id="pLabel" placeholder="Label Name">
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <input type="number" id="pX" placeholder="X Coord">
-            <input type="number" id="pY" placeholder="Y Coord">
+            <input type="number" id="pX" placeholder="X">
+            <input type="number" id="pY" placeholder="Y">
         </div>
         <select id="pCat">
             <option value="Tech">Tech (Blue)</option>
             <option value="Finance">Finance (Green)</option>
             <option value="Health">Health (Red)</option>
         </select>
-        <button id="addBtn">Add Point</button>
+        <button id="addBtn">Submit Entry</button>
+        <button id="cancelEdit" style="display:none; background:#475569;">Cancel Edit</button>
     </div>
 
     <div class="form-group">
-        <label>Chart Metadata</label>
-        <input type="text" id="chartTitleInput" placeholder="Chart Title">
-    </div>
-
-    <div class="form-group">
-        <label>Styling & Appearance</label>
+        <label>Visual Workspace</label>
+        <input type="text" id="chartTitleInput" placeholder="Set Chart Title">
         <div style="display:flex; justify-content:space-between; align-items:center;">
             <label>Background</label>
             <input type="color" id="bgColor" value="#020617">
         </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label>Label Font</label>
-            <input type="number" id="fSize" value="12" style="width:50px">
-        </div>
     </div>
 
     <div class="form-group">
-        <label>Coordinate Jump</label>
+        <label>Navigation</label>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
             <input type="number" id="camX" value="0">
             <input type="number" id="camY" value="0">
         </div>
-        <button id="setCamBtn">Go to Origin</button>
+        <button id="setCamBtn">Center Camera</button>
     </div>
 
-    <button id="downloadBtn" style="background:transparent; border:1px solid var(--accent); color:var(--accent);">Download High-Res PNG</button>
-    <button id="clearBtn" style="background:#ef4444; color:white;">Clear Workspace</button>
+    <button id="downloadBtn" style="background:transparent; border:1px solid var(--accent); color:var(--accent);">Export Image</button>
+    <button id="clearBtn" style="background:#ef4444; color:white;">Clear All</button>
 </div>
 
 <div id="canvas-container">
     <canvas id="world"></canvas>
     <div id="coords">X: 0 | Y: 0 | Zoom: 1.0x</div>
-    <div id="editPopup">
-        <label>Edit Data Label</label>
-        <input type="text" id="editLabel">
-        <button id="saveEditBtn" style="margin-top:10px; width:100%;">Save</button>
-    </div>
 </div>
 
 <script type="module">
@@ -85,67 +73,87 @@
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
-    const data = [{ x: 0, y: 0, label: "ORIGIN_ZERO", category: "Tech" }];
+    let data = [{ x: 0, y: 0, label: "ORIGIN_NODE", category: "Tech" }];
+    let editingNode = null;
+
     const chart = new Nucleus('#world', {});
     chart.render(data);
 
-    let selectedPoint = null;
+    // Sidebar Logic
+    const pLabel = document.getElementById('pLabel');
+    const pX = document.getElementById('pX');
+    const pY = document.getElementById('pY');
+    const pCat = document.getElementById('pCat');
+    const addBtn = document.getElementById('addBtn');
+    const cancelEdit = document.getElementById('cancelEdit');
+    const inputTitle = document.getElementById('inputTitle');
 
-    // Manual Data Entry
-    document.getElementById('addBtn').onclick = () => {
-        data.push({
-            x: parseFloat(document.getElementById('pX').value) || 0,
-            y: -parseFloat(document.getElementById('pY').value) || 0,
-            label: document.getElementById('pLabel').value || "Node",
-            category: document.getElementById('pCat').value
-        });
+    addBtn.onclick = () => {
+        if (editingNode) {
+            // Apply Edits
+            editingNode.label = pLabel.value;
+            editingNode.x = parseFloat(pX.value);
+            editingNode.y = -parseFloat(pY.value);
+            editingNode.category = pCat.value;
+            exitEditMode();
+        } else {
+            // Add New
+            data.push({
+                x: parseFloat(pX.value) || 0,
+                y: -parseFloat(pY.value) || 0,
+                label: pLabel.value || "New Node",
+                category: pCat.value
+            });
+        }
     };
 
-    // Click to Add / Edit
+    function exitEditMode() {
+        editingNode = null;
+        inputTitle.innerText = "Add New Point";
+        addBtn.innerText = "Submit Entry";
+        cancelEdit.style.display = "none";
+        pLabel.value = ""; pX.value = ""; pY.value = "";
+    }
+
+    cancelEdit.onclick = exitEditMode;
+
     canvas.onclick = (e) => {
         const found = data.find(p => {
             const dist = Math.sqrt(Math.pow(chart.mouse.worldX - p.x, 2) + Math.pow(chart.mouse.worldY - p.y, 2));
-            return dist < (20 / chart.camera.zoom);
+            return dist < (15 / chart.camera.zoom);
         });
 
         if (found) {
-            selectedPoint = found;
-            const popup = document.getElementById('editPopup');
-            popup.style.display = 'block';
-            popup.style.left = e.clientX + 'px';
-            popup.style.top = e.clientY + 'px';
-            document.getElementById('editLabel').value = found.label;
+            // Enter Edit Mode
+            editingNode = found;
+            inputTitle.innerText = "Editing Node";
+            addBtn.innerText = "Save Changes";
+            cancelEdit.style.display = "block";
+            pLabel.value = found.label;
+            pX.value = found.x;
+            pY.value = -found.y;
+            pCat.value = found.category;
+            pLabel.focus();
         } else {
-            document.getElementById('editPopup').style.display = 'none';
-            // If clicking empty space, add a new point
-            data.push({ x: chart.mouse.worldX, y: chart.mouse.worldY, label: "SEED_"+data.length, category: "Tech" });
+            // Click to drop point
+            data.push({ x: chart.mouse.worldX, y: chart.mouse.worldY, label: "Point_"+data.length, category: "Tech" });
         }
     };
 
-    document.getElementById('saveEditBtn').onclick = () => {
-        if (selectedPoint) {
-            selectedPoint.label = document.getElementById('editLabel').value;
-            document.getElementById('editPopup').style.display = 'none';
-        }
-    };
-
-    // Sidebar Syncs
+    // Styling & Utilities
     document.getElementById('chartTitleInput').oninput = (e) => chart.chartTitle = e.target.value;
     document.getElementById('bgColor').oninput = (e) => chart.canvasColor = e.target.value;
-    document.getElementById('fSize').oninput = (e) => chart.fontSize = parseInt(e.target.value);
     document.getElementById('setCamBtn').onclick = () => {
         chart.camera.x = parseFloat(document.getElementById('camX').value);
         chart.camera.y = -parseFloat(document.getElementById('camY').value);
     };
-
     document.getElementById('downloadBtn').onclick = () => {
         const link = document.createElement('a');
         link.download = 'nucleus-export.png';
         link.href = canvas.toDataURL();
         link.click();
     };
-
-    document.getElementById('clearBtn').onclick = () => { data.length = 0; };
+    document.getElementById('clearBtn').onclick = () => { data.length = 0; exitEditMode(); };
 
     function updateHUD() {
         hud.innerText = `X: ${Math.round(chart.mouse.worldX)} | Y: ${Math.round(-chart.mouse.worldY)} | Zoom: ${chart.camera.zoom.toFixed(2)}x`;
