@@ -2,125 +2,76 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Nucleus Chart | High-Fidelity Data Lab</title>
+    <title>Nucleus OS | Spatial Data Engine</title>
     <style>
-        :root { --primary: #818cf8; --bg: #030712; --panel: #111827; --text-main: #f1f5f9; }
-        body { font-family: 'Segoe UI', 'Inter', sans-serif; background: var(--bg); color: var(--text-main); margin: 0; display: flex; height: 100vh; overflow: hidden; }
+        :root { --accent: #818cf8; --glass: rgba(15, 23, 42, 0.8); }
+        body { margin: 0; background: #020617; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
         
-        #controls { width: 320px; background: var(--panel); padding: 2rem; border-right: 1px solid #1f2937; display: flex; flex-direction: column; gap: 1.5rem; }
-        h1 { font-size: 1.5rem; margin: 0; color: var(--primary); display: flex; align-items: center; gap: 8px;}
-        p { font-size: 0.85rem; color: #94a3b8; line-height: 1.6; }
+        /* Floating HUD */
+        #hud {
+            position: absolute; top: 20px; left: 20px; width: 300px;
+            background: var(--glass); backdrop-filter: blur(12px);
+            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
+            padding: 24px; pointer-events: all; z-index: 100;
+        }
+
+        canvas { width: 100vw; height: 100vh; display: block; }
         
-        #viewport { flex-grow: 1; display: flex; justify-content: center; align-items: center; position: relative; cursor: crosshair; }
-        canvas { background: #000000; border: 1px solid #1f2937; border-radius: 12px; box-shadow: 0 30px 60px rgba(0,0,0,0.6); }
-        
-        .badge { background: rgba(129, 140, 248, 0.15); color: var(--primary); padding: 5px 10px; border-radius: 6px; font-size: 0.75rem; font-weight: bold; align-self: start; }
-        .control-group { display: flex; flex-direction: column; gap: 8px; }
-        label { font-size: 0.75rem; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; }
-        
-        input[type="range"] { width: 100%; cursor: pointer; accent-color: var(--primary); }
-        button { background: var(--primary); color: white; border: none; padding: 12px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 0.9rem; margin-top: auto; transition: all 0.2s; }
-        button:hover { opacity: 0.9; transform: translateY(-1px); background: #6366f1; }
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
+        .stat-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; }
+        .stat-val { display: block; font-size: 1.2rem; font-weight: bold; color: var(--accent); }
+        .stat-label { font-size: 0.6rem; text-transform: uppercase; opacity: 0.6; }
+
+        .instructions { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
+                        background: var(--glass); padding: 8px 20px; border-radius: 20px; font-size: 0.8rem; opacity: 0.8; }
     </style>
 </head>
 <body>
 
-    <div id="controls">
-        <h1>🧬 Nucleus Chart</h1>
-        <span class="badge">V2.0 GALACTIC ENGINE</span>
-        <p>A deterministic radial engine for "Label Soup." Click the canvas to add points.</p>
+    <div id="hud">
+        <h2 style="margin:0; font-size: 1.2rem; letter-spacing: 1px;">NUCLEUS <span style="font-weight:100">PRO</span></h2>
+        <p style="font-size: 0.8rem; opacity: 0.7;">Enterprise Spatial Cluster Engine v2.5</p>
         
-        <div class="control-group">
-            <label for="radiusRange">Fusion Gravity</label>
-            <input type="range" id="radiusRange" min="10" max="120" value="50">
+        <div class="stat-grid">
+            <div class="stat-card"><span class="stat-val" id="nodeCount">0</span><span class="stat-label">Active Nodes</span></div>
+            <div class="stat-card"><span class="stat-val" id="zoomVal">1.0x</span><span class="stat-label">Zoom Level</span></div>
         </div>
 
-        <div class="control-group">
-            <label for="spokeRange">Spoke Expansion</label>
-            <input type="range" id="spokeRange" min="40" max="200" value="85">
-        </div>
-
-        <div class="control-group">
-            <label for="rotationRange">Orbital Rotation</label>
-            <input type="range" id="rotationRange" min="0" max="360" value="0">
-        </div>
-
-        <button id="clearBtn">Wipe Universe</button>
+        <button id="clearBtn" style="width:100%; margin-top: 20px; padding: 10px; background: var(--accent); border: none; color: white; border-radius: 8px; cursor:pointer;">Initialize Wipe</button>
     </div>
 
-    <div id="viewport">
-        <canvas id="nucleusCanvas" width="900" height="600"></canvas>
-    </div>
+    <div class="instructions">SCROLL to Zoom • CLICK to Seed Data • DRAG to Explore</div>
+
+    <canvas id="world"></canvas>
 
     <script type="module">
         import { Nucleus } from './index.js';
 
-        // Wait for DOM to be fully loaded
-        window.addEventListener('DOMContentLoaded', () => {
-            const canvas = document.getElementById('nucleusCanvas');
-            const radiusInput = document.getElementById('radiusRange');
-            const spokeInput = document.getElementById('spokeRange');
-            const rotationInput = document.getElementById('rotationRange');
-            const clearBtn = document.getElementById('clearBtn');
+        const canvas = document.getElementById('world');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
 
-            const categoryColors = {
-                'Finance': '#4ade80', 
-                'Tech': '#60a5fa',    
-                'Health': '#f87171',  
-                'default': '#818cf8'
-            };
+        const data = [
+            { x: window.innerWidth/2, y: window.innerHeight/2, label: "CENTRAL_CORE", category: "Tech" },
+            { x: window.innerWidth/2, y: window.innerHeight/2, label: "BACKUP_NODE", category: "Finance" }
+        ];
 
-            let dataPoints = [
-                { x: 450, y: 300, label: "Core Feature Alpha", category: "Tech", weight: 5 },
-                { x: 450, y: 300, label: "Secondary Module Beta", category: "Finance", weight: 2 },
-                { x: 650, y: 200, label: "Isolated Node", category: "Health", weight: 3 }
-            ];
+        const chart = new Nucleus('#world', { 
+            categoryColors: { 'Tech': '#60a5fa', 'Finance': '#4ade80' } 
+        });
 
-            // Initialize the engine
-            const chart = new Nucleus('#nucleusCanvas', { 
-                categoryColors: categoryColors,
-                fusionRadius: parseInt(radiusInput.value), 
-                spokeLength: parseInt(spokeInput.value),
-                rotationOffset: parseInt(rotationInput.value)
-            });
+        // Start the continuous render loop
+        chart.render(data);
 
-            const render = () => chart.render(dataPoints);
-            render();
+        // Update HUD Stats
+        setInterval(() => {
+            document.getElementById('nodeCount').innerText = data.length;
+            document.getElementById('zoomVal').innerText = chart.camera.zoom.toFixed(1) + 'x';
+        }, 100);
 
-            // Interactivity
-            canvas.addEventListener('mousedown', (e) => {
-                const rect = canvas.getBoundingClientRect();
-                const cats = Object.keys(categoryColors);
-                dataPoints.push({
-                    x: e.clientX - rect.left,
-                    y: e.clientY - rect.top,
-                    label: `ENTRY_${dataPoints.length + 1}`,
-                    category: cats[Math.floor(Math.random() * (cats.length - 1))],
-                    weight: Math.floor(Math.random() * 4) + 1
-                });
-                render();
-            });
-
-            radiusInput.addEventListener('input', (e) => {
-                chart.fusionRadius = parseInt(e.target.value);
-                render();
-            });
-
-            spokeInput.addEventListener('input', (e) => {
-                chart.spokeLength = parseInt(e.target.value);
-                render();
-            });
-
-            rotationInput.addEventListener('input', (e) => {
-                chart.rotationOffset = parseInt(e.target.value);
-                render();
-            });
-
-            clearBtn.addEventListener('click', () => {
-                dataPoints = [];
-                render();
-            });
+        canvas.addEventListener('mousedown', (e) => {
+            // Adjust for Camera Zoom/Offset if you want perfect placement
+            data.push({ x: e.clientX, y: e.clientY, label: "NEW_DATA_STREAM", category: "Tech" });
         });
     </script>
 </body>
