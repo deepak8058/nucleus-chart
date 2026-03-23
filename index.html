@@ -2,18 +2,18 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nucleus Workstation v3.0</title>
+    <title>Nucleus Workstation v4.0</title>
     <style>
         :root { --bg: #020617; --sidebar: #0f172a; --accent: #818cf8; --text: #f1f5f9; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         #sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid #1e293b; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; }
         #canvas-container { flex-grow: 1; position: relative; }
         canvas { width: 100%; height: 100%; }
-
         .form-group { background: #1e293b; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
-        label { font-size: 0.7rem; color: #94a3b8; text-transform: uppercase; }
+        label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: bold; }
         input, select { background: #020617; border: 1px solid #334155; color: white; padding: 6px; border-radius: 4px; font-size: 0.8rem; }
         button { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
+        #editPopup { position: absolute; display: none; background: #1e293b; border: 1px solid var(--accent); padding: 15px; border-radius: 8px; z-index: 100; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
     </style>
 </head>
 <body>
@@ -22,48 +22,37 @@
     <h2 style="color:var(--accent); margin:0; font-size:1.1rem;">NUCLEUS PRO</h2>
 
     <div class="form-group">
-        <label>Camera Origin (X, Y)</label>
+        <label>Metadata</label>
+        <input type="text" id="chartTitleInput" placeholder="Chart Title">
+        <input type="text" id="xAxisInput" placeholder="X Axis Name">
+        <input type="text" id="yAxisInput" placeholder="Y Axis Name">
+    </div>
+
+    <div class="form-group">
+        <label>Camera Setup</label>
         <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <input type="number" id="camX" value="0">
-            <input type="number" id="camY" value="0">
+            <input type="number" id="camX" value="0" placeholder="Go X">
+            <input type="number" id="camY" value="0" placeholder="Go Y">
         </div>
-        <button id="setCamBtn">Teleport to Origin</button>
+        <button id="setCamBtn">Center View</button>
     </div>
 
     <div class="form-group">
-        <label>Visual Stylings</label>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label>Background</label>
-            <input type="color" id="bgColor" value="#020617">
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label>Font Size</label>
-            <input type="number" id="fSize" value="12" style="width:60px;">
-        </div>
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label>Grid Size</label>
-            <input type="number" id="gSize" value="100" style="width:60px;">
-        </div>
+        <label>Styling</label>
+        <input type="color" id="bgColor" value="#020617">
+        <input type="number" id="fSize" value="12" title="Label Font Size">
     </div>
 
-    <div class="form-group">
-        <label>Add Data Point</label>
-        <input type="text" id="pLabel" placeholder="Label">
-        <input type="number" id="pX" placeholder="X">
-        <input type="number" id="pY" placeholder="Y">
-        <select id="pCat">
-            <option value="Tech">Tech (Blue)</option>
-            <option value="Finance">Finance (Green)</option>
-        </select>
-        <button id="addBtn">Add to Map</button>
-    </div>
-
-    <button id="downloadBtn" style="background:transparent; border:1px solid var(--accent); color:var(--accent);">Download PNG</button>
-    <button id="clearBtn" style="background:#ef4444; color:white;">Clear Chart</button>
+    <button id="downloadBtn" style="background:transparent; border:1px solid var(--accent); color:var(--accent);">Export High-Res PNG</button>
 </div>
 
 <div id="canvas-container">
     <canvas id="world"></canvas>
+    <div id="editPopup">
+        <label>Edit Point</label>
+        <input type="text" id="editLabel">
+        <button id="saveEditBtn" style="margin-top:10px;">Apply Change</button>
+    </div>
 </div>
 
 <script type="module">
@@ -73,44 +62,48 @@
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
-    const data = [{ x: 0, y: 0, label: "ORIGIN", category: "Tech" }];
-    const chart = new Nucleus('#world', { 
-        categoryColors: { 'Tech': '#60a5fa', 'Finance': '#4ade80' } 
-    });
-
+    const data = [{ x: 0, y: 0, label: "ORIGIN_NODE", category: "Tech" }];
+    const chart = new Nucleus('#world', {});
     chart.render(data);
 
-    // Sidebar Controls
-    document.getElementById('setCamBtn').onclick = () => {
-        chart.camera.x = parseFloat(document.getElementById('camX').value);
-        chart.camera.y = -parseFloat(document.getElementById('camY').value); // Invert Y for standard Cartesian
-    };
+    let selectedPoint = null;
 
+    // --- Dynamic Sync ---
+    document.getElementById('chartTitleInput').oninput = (e) => chart.chartTitle = e.target.value;
+    document.getElementById('xAxisInput').oninput = (e) => chart.xAxisName = e.target.value;
+    document.getElementById('yAxisInput').oninput = (e) => chart.yAxisName = e.target.value;
     document.getElementById('bgColor').oninput = (e) => chart.canvasColor = e.target.value;
     document.getElementById('fSize').oninput = (e) => chart.fontSize = parseInt(e.target.value);
-    document.getElementById('gSize').oninput = (e) => chart.gridSize = parseInt(e.target.value);
 
-    document.getElementById('addBtn').onclick = () => {
-        data.push({
-            x: parseFloat(document.getElementById('pX').value),
-            y: -parseFloat(document.getElementById('pY').value),
-            label: document.getElementById('pLabel').value || "Node",
-            category: document.getElementById('pCat').value
+    document.getElementById('setCamBtn').onclick = () => {
+        chart.camera.x = parseFloat(document.getElementById('camX').value);
+        chart.camera.y = -parseFloat(document.getElementById('camY').value);
+    };
+
+    // --- Click to Edit ---
+    canvas.onclick = (e) => {
+        const found = data.find(p => {
+            const dist = Math.sqrt(Math.pow(chart.mouse.worldX - p.x, 2) + Math.pow(chart.mouse.worldY - p.y, 2));
+            return dist < (15 / chart.camera.zoom);
         });
+
+        if (found) {
+            selectedPoint = found;
+            const popup = document.getElementById('editPopup');
+            popup.style.display = 'block';
+            popup.style.left = e.clientX + 'px';
+            popup.style.top = e.clientY + 'px';
+            document.getElementById('editLabel').value = found.label;
+        } else {
+            document.getElementById('editPopup').style.display = 'none';
+        }
     };
 
-    document.getElementById('downloadBtn').onclick = () => {
-        const link = document.createElement('a');
-        link.download = 'nucleus-export.png';
-        link.href = canvas.toDataURL();
-        link.click();
-    };
-
-    document.getElementById('clearBtn').onclick = () => { data.length = 0; };
-
-    // Canvas click - direct world coordinates
-    canvas.onmousedown = () => {
-        data.push({ x: chart.mouse.worldX, y: chart.mouse.worldY, label: "QuickSeed", category: "Tech" });
+    document.getElementById('saveEditBtn').onclick = () => {
+        if (selectedPoint) {
+            selectedPoint.label = document.getElementById('editLabel').value;
+            document.getElementById('editPopup').style.display = 'none';
+        }
     };
 
     window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
