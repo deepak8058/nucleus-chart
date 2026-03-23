@@ -1,18 +1,19 @@
 /**
- * Nucleus Chart Engine
- * Logic for handling overplotting via deterministic radial projection.
+ * Nucleus Chart Engine v2.0 - "Galactic Edition"
  */
 export class Nucleus {
     constructor(canvasSelector, options = {}) {
         this.canvas = document.querySelector(canvasSelector);
-        if (!this.canvas) throw new Error(`Canvas element ${canvasSelector} not found.`);
         this.ctx = this.canvas.getContext('2d');
         
-        // Configuration
-        this.fusionRadius = options.fusionRadius || 40;
+        // Advanced Configuration
+        this.fusionRadius = options.fusionRadius || 50;
         this.spokeLength = options.spokeLength || 80;
-        this.accentColor = options.hubColor || '#818cf8'; // Primary color for hub/spokes
-        this.labelColor = options.labelColor || '#ffffff'; // White labels for dark bg
+        this.rotationOffset = options.rotationOffset || 0;
+        
+        // Expert Styling
+        this.categoryColors = options.categoryColors || { default: '#818cf8' };
+        this.labelColor = options.labelColor || '#ffffff';
     }
 
     render(data) {
@@ -22,47 +23,53 @@ export class Nucleus {
         clusters.forEach(cluster => {
             const n = cluster.points.length;
             
-            // Draw the Nucleus Hub
-            this.ctx.beginPath();
-            // Hub gets larger with more mass
-            const hubRadius = 6 + (n * 1.5);
-            this.ctx.arc(cluster.x, cluster.y, hubRadius, 0, Math.PI * 2);
-            this.ctx.fillStyle = n > 1 ? this.accentColor : '#64748b'; // Gray for single points
+            // 1. Draw "Event Horizon" (Glow for the Cluster)
+            const gradient = this.ctx.createRadialGradient(cluster.x, cluster.y, 0, cluster.x, cluster.y, this.fusionRadius * 1.5);
+            gradient.addColorStop(0, 'rgba(129, 140, 248, 0.1)');
+            gradient.addColorStop(1, 'transparent');
+            this.ctx.fillStyle = gradient;
+            this.ctx.arc(cluster.x, cluster.y, this.fusionRadius * 1.5, 0, Math.PI * 2);
             this.ctx.fill();
 
-            // Symmetrical Spokes (Petals)
+            // 2. Draw Categorical Spokes
             if (n > 1) {
-                // Adjust spoke length based on density
-                const effectiveSpokeLength = this.spokeLength + (n * 3);
-                
                 cluster.points.forEach((p, i) => {
-                    // Divide 360 degrees by number of points
-                    const angle = (i * 2 * Math.PI) / n; 
-                    const endX = cluster.x + effectiveSpokeLength * Math.cos(angle);
-                    const endY = cluster.y + effectiveSpokeLength * Math.sin(angle);
+                    const angle = ((i * 2 * Math.PI) / n) + (this.rotationOffset * Math.PI / 180);
+                    const endX = cluster.x + this.spokeLength * Math.cos(angle);
+                    const endY = cluster.y + this.spokeLength * Math.sin(angle);
 
-                    // Draw the Spoke (Wheel Design)
+                    // Get Data-Driven Attributes
+                    const pColor = this.categoryColors[p.category] || this.categoryColors.default;
+                    const pThickness = p.weight || 2; 
+
+                    // Draw Spoke
                     this.ctx.beginPath();
                     this.ctx.moveTo(cluster.x, cluster.y);
                     this.ctx.lineTo(endX, endY);
-                    this.ctx.lineWidth = 1.5; // Thicker lines for 'spoke' look
-                    this.ctx.strokeStyle = `rgba(129, 140, 248, 0.5)`; // Semi-transparent accent
-                    this.ctx.lineCap = 'round'; // Smooth ends
+                    this.ctx.lineWidth = pThickness; 
+                    this.ctx.strokeStyle = pColor;
+                    this.ctx.lineCap = 'round';
                     this.ctx.stroke();
 
-                    // Draw the Label
+                    // Draw Label with matching color glow
+                    this.ctx.shadowBlur = 5;
+                    this.ctx.shadowColor = pColor;
                     this.ctx.fillStyle = this.labelColor;
-                    this.ctx.font = '12px "Inter", "Segoe UI", sans-serif';
-                    // Smart text anchor logic
+                    this.ctx.font = '11px "Inter", sans-serif';
                     this.ctx.textAlign = endX > cluster.x ? 'left' : 'right';
-                    this.ctx.fillText(p.label, endX + (endX > cluster.x ? 8 : -8), endY + 4);
+                    this.ctx.fillText(p.label.toUpperCase(), endX + (endX > cluster.x ? 12 : -12), endY + 4);
+                    this.ctx.shadowBlur = 0; 
                 });
-            } else {
-                // Single point labeling
-                this.ctx.fillStyle = this.labelColor;
-                this.ctx.font = '12px "Inter", "Segoe UI", sans-serif';
-                this.ctx.fillText(cluster.points[0].label, cluster.x + 10, cluster.y - 10);
             }
+
+            // 3. Draw the Central Hub (The "Star")
+            this.ctx.beginPath();
+            this.ctx.arc(cluster.x, cluster.y, 4 + (n * 1.2), 0, Math.PI * 2);
+            this.ctx.fillStyle = '#ffffff'; 
+            this.ctx.shadowBlur = 15;
+            this.ctx.shadowColor = '#818cf8';
+            this.ctx.fill();
+            this.ctx.shadowBlur = 0;
         });
     }
 
