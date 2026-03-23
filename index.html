@@ -2,68 +2,74 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nucleus Workstation Pro</title>
+    <title>Nucleus | Spatial Lab Pro</title>
     <style>
         :root { --bg: #020617; --sidebar: #0f172a; --accent: #818cf8; --text: #f1f5f9; }
         body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
-        #sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid #1e293b; padding: 20px; display: flex; flex-direction: column; gap: 15px; overflow-y: auto; z-index: 10; }
-        #canvas-container { flex-grow: 1; position: relative; }
-        canvas { width: 100%; height: 100%; cursor: crosshair; }
-        .form-group { background: #1e293b; padding: 12px; border-radius: 8px; display: flex; flex-direction: column; gap: 8px; }
-        label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: bold; }
-        input, select { background: #020617; border: 1px solid #334155; color: white; padding: 8px; border-radius: 4px; font-size: 0.8rem; }
-        button { background: var(--accent); color: white; border: none; padding: 10px; border-radius: 6px; font-weight: bold; cursor: pointer; }
-        #hud { position: absolute; bottom: 10px; right: 10px; font-size: 0.7rem; font-family: monospace; color: var(--accent); pointer-events: none; background: rgba(0,0,0,0.5); padding: 5px 10px; border-radius: 4px; }
+        
+        #sidebar { width: 320px; background: var(--sidebar); border-right: 1px solid #1e293b; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; z-index: 100; }
+        #view { flex-grow: 1; position: relative; background: #000; }
+        canvas { width: 100%; height: 100%; }
+
+        .group { background: #1e293b; padding: 15px; border-radius: 12px; display: flex; flex-direction: column; gap: 10px; }
+        label { font-size: 0.65rem; color: #94a3b8; text-transform: uppercase; font-weight: bold; letter-spacing: 1px; }
+        input, select { background: #020617; border: 1px solid #334155; color: white; padding: 8px; border-radius: 6px; font-size: 0.8rem; }
+        
+        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 8px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { filter: brightness(1.1); transform: translateY(-1px); }
+        
+        #hud { position: absolute; bottom: 20px; right: 20px; font-family: monospace; font-size: 0.75rem; color: var(--accent); background: rgba(0,0,0,0.7); padding: 8px 15px; border-radius: 30px; border: 1px solid rgba(129, 140, 248, 0.3); pointer-events: none; }
     </style>
 </head>
 <body>
 
 <div id="sidebar">
-    <h2 style="color:var(--accent); margin:0; font-size:1.1rem;">NUCLEUS PRO v6.0</h2>
+    <h2 style="color:var(--accent); margin:0; font-size:1.3rem; letter-spacing:-1px;">NUCLEUS <span style="font-weight:100">PRO</span></h2>
 
-    <div class="form-group">
-        <label id="modeTitle">Data Entry</label>
-        <input type="text" id="pLabel" placeholder="Label">
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <input type="number" id="pX" placeholder="X Coord">
-            <input type="number" id="pY" placeholder="Y Coord">
+    <div class="group">
+        <label>Manual Entry</label>
+        <input type="text" id="pLabel" placeholder="Point Label">
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px;">
+            <input type="number" id="pX" placeholder="X">
+            <input type="number" id="pY" placeholder="Y">
         </div>
         <select id="pCat">
             <option value="Tech">Tech (Blue)</option>
             <option value="Finance">Finance (Green)</option>
             <option value="Health">Health (Red)</option>
+            <option value="Default">Default (Purple)</option>
         </select>
-        <button id="addBtn">Add Point</button>
-        <button id="cancelBtn" style="display:none; background:#475569;">Cancel Edit</button>
+        <button id="addBtn">Drop Point</button>
     </div>
 
-    <div class="form-group">
-        <label>Configuration</label>
-        <input type="text" id="titleInp" placeholder="Chart Title">
+    <div class="group">
+        <label>Physics & Constraints</label>
+        <div style="display:flex; flex-direction:column; gap:5px;">
+            <label style="font-size: 0.6rem; opacity: 0.7;">Gravity (Fusion Radius)</label>
+            <input type="range" id="fusionRange" min="5" max="150" value="20">
+            <label style="font-size: 0.6rem; opacity: 0.7;">Orbit (Spoke Length)</label>
+            <input type="range" id="spokeRange" min="20" max="300" value="80">
+        </div>
+    </div>
+
+    <div class="group">
+        <label>Atmosphere</label>
+        <input type="text" id="titleInp" placeholder="Enter Chart Title">
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label>Canvas Bg</label>
+            <label>Canvas</label>
             <input type="color" id="bgColor" value="#020617">
         </div>
         <div style="display:flex; justify-content:space-between; align-items:center;">
-            <label>Label Size</label>
-            <input type="number" id="fSize" value="12" style="width:50px">
+            <label>Text Size</label>
+            <input type="number" id="fSize" value="12" style="width:50px;">
         </div>
     </div>
 
-    <div class="form-group">
-        <label>Teleport Camera</label>
-        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
-            <input type="number" id="camX" value="0">
-            <input type="number" id="camY" value="0">
-        </div>
-        <button id="goBtn">Center View</button>
-    </div>
-
-    <button id="dlBtn" style="background:transparent; border:1px solid var(--accent); color:var(--accent);">Download PNG</button>
-    <button id="clearBtn" style="background:#ef4444;">Clear All</button>
+    <button id="dlBtn" style="background:transparent; border:1px solid var(--accent); color:var(--accent);">Export to PNG</button>
+    <button id="clearBtn" style="background:#ef4444; color:white; border:none;">Clear All Data</button>
 </div>
 
-<div id="canvas-container">
+<div id="view">
     <canvas id="world"></canvas>
     <div id="hud">X: 0 | Y: 0 | Zoom: 1.00x</div>
 </div>
@@ -76,77 +82,59 @@
     canvas.width = canvas.clientWidth;
     canvas.height = canvas.clientHeight;
 
-    let data = [{ x: 0, y: 0, label: "ORIGIN", category: "Tech" }];
-    let editTarget = null;
-
+    const data = [{ x: 0, y: 0, label: "ORIGIN_ZERO", category: "Tech" }];
     const chart = new Nucleus('#world', {});
     chart.render(data);
 
-    // Add / Edit Logic
-    const addBtn = document.getElementById('addBtn');
-    const cancelBtn = document.getElementById('cancelBtn');
-    const modeTitle = document.getElementById('modeTitle');
-
-    addBtn.onclick = () => {
-        const x = parseFloat(document.getElementById('pX').value) || 0;
-        const y = -parseFloat(document.getElementById('pY').value) || 0;
-        const label = document.getElementById('pLabel').value || "Node";
-        const category = document.getElementById('pCat').value;
-
-        if (editTarget) {
-            editTarget.x = x; editTarget.y = y; editTarget.label = label; editTarget.category = category;
-            stopEdit();
-        } else {
-            data.push({ x, y, label, category });
-        }
+    // Sidebar Interactions
+    document.getElementById('addBtn').onclick = () => {
+        data.push({
+            x: parseFloat(document.getElementById('pX').value) || 0,
+            y: -parseFloat(document.getElementById('pY').value) || 0,
+            label: document.getElementById('pLabel').value || "Node",
+            category: document.getElementById('pCat').value
+        });
     };
 
-    function stopEdit() {
-        editTarget = null;
-        modeTitle.innerText = "Data Entry";
-        addBtn.innerText = "Add Point";
-        cancelBtn.style.display = "none";
-        document.getElementById('pLabel').value = "";
-    }
-    cancelBtn.onclick = stopEdit;
-
-    canvas.onclick = (e) => {
-        const found = data.find(p => Math.sqrt((chart.mouse.worldX - p.x)**2 + (chart.mouse.worldY - p.y)**2) < (15/chart.camera.zoom));
-        if (found) {
-            editTarget = found;
-            modeTitle.innerText = "Editing Node";
-            addBtn.innerText = "Save Changes";
-            cancelBtn.style.display = "block";
-            document.getElementById('pLabel').value = found.label;
-            document.getElementById('pX').value = found.x;
-            document.getElementById('pY').value = -found.y;
-            document.getElementById('pCat').value = found.category;
-        } else {
-            data.push({ x: chart.mouse.worldX, y: chart.mouse.worldY, label: "Point_"+data.length, category: "Tech" });
-        }
-    };
-
-    // Sidebar Sync
+    document.getElementById('fusionRange').oninput = (e) => chart.fusionRadius = parseInt(e.target.value);
+    document.getElementById('spokeRange').oninput = (e) => chart.spokeLength = parseInt(e.target.value);
     document.getElementById('titleInp').oninput = (e) => chart.chartTitle = e.target.value;
     document.getElementById('bgColor').oninput = (e) => chart.canvasColor = e.target.value;
     document.getElementById('fSize').oninput = (e) => chart.fontSize = parseInt(e.target.value);
-    document.getElementById('goBtn').onclick = () => {
-        chart.camera.x = parseFloat(document.getElementById('camX').value);
-        chart.camera.y = -parseFloat(document.getElementById('camY').value);
+
+    // Click to add (Stacks if same location)
+    canvas.onmousedown = (e) => {
+        // Only add point if not dragging
+        const startX = e.clientX;
+        const startY = e.clientY;
+        
+        canvas.onmouseup = (upE) => {
+            if (Math.abs(upE.clientX - startX) < 5 && Math.abs(upE.clientY - startY) < 5) {
+                data.push({ 
+                    x: chart.mouse.worldX, 
+                    y: chart.mouse.worldY, 
+                    label: "POINT_"+data.length, 
+                    category: "Default" 
+                });
+            }
+        }
     };
+
     document.getElementById('dlBtn').onclick = () => {
         const link = document.createElement('a');
-        link.download = 'nucleus.png';
+        link.download = 'nucleus-spatial.png';
         link.href = canvas.toDataURL();
         link.click();
     };
-    document.getElementById('clearBtn').onclick = () => { data.length = 0; stopEdit(); };
 
-    function hudLoop() {
+    document.getElementById('clearBtn').onclick = () => { data.length = 0; };
+
+    function loopHUD() {
         hud.innerText = `X: ${Math.round(chart.mouse.worldX)} | Y: ${Math.round(-chart.mouse.worldY)} | Zoom: ${chart.camera.zoom.toFixed(2)}x`;
-        requestAnimationFrame(hudLoop);
+        requestAnimationFrame(loopHUD);
     }
-    hudLoop();
+    loopHUD();
+
     window.onresize = () => { canvas.width = window.innerWidth; canvas.height = window.innerHeight; };
 </script>
 </body>
