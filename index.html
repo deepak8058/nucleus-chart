@@ -2,77 +2,111 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Nucleus OS | Spatial Data Engine</title>
+    <title>Nucleus | Enterprise Workstation</title>
     <style>
-        :root { --accent: #818cf8; --glass: rgba(15, 23, 42, 0.8); }
-        body { margin: 0; background: #020617; color: white; font-family: 'Inter', sans-serif; overflow: hidden; }
+        :root { --bg: #020617; --sidebar: #0f172a; --accent: #818cf8; --text: #f1f5f9; }
+        body { margin: 0; font-family: 'Inter', sans-serif; background: var(--bg); color: var(--text); display: flex; height: 100vh; overflow: hidden; }
         
-        /* Floating HUD */
-        #hud {
-            position: absolute; top: 20px; left: 20px; width: 300px;
-            background: var(--glass); backdrop-filter: blur(12px);
-            border: 1px solid rgba(255,255,255,0.1); border-radius: 16px;
-            padding: 24px; pointer-events: all; z-index: 100;
-        }
+        #sidebar { width: 340px; background: var(--sidebar); border-right: 1px solid #1e293b; padding: 25px; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; z-index: 10; }
+        #canvas-container { flex-grow: 1; position: relative; background: black; }
+        canvas { width: 100%; height: 100%; cursor: crosshair; }
 
-        canvas { width: 100vw; height: 100vh; display: block; }
+        h2 { font-size: 1rem; color: var(--accent); margin-top: 0; text-transform: uppercase; letter-spacing: 2px; }
+        .section-title { font-size: 0.75rem; font-weight: bold; opacity: 0.5; margin-bottom: 10px; display: block; }
         
-        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 20px; }
-        .stat-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; text-align: center; }
-        .stat-val { display: block; font-size: 1.2rem; font-weight: bold; color: var(--accent); }
-        .stat-label { font-size: 0.6rem; text-transform: uppercase; opacity: 0.6; }
+        .form-group { background: #1e293b; padding: 15px; border-radius: 10px; display: flex; flex-direction: column; gap: 10px; }
+        input, select { background: #020617; border: 1px solid #334155; color: white; padding: 8px; border-radius: 4px; font-size: 0.8rem; }
+        
+        button { background: var(--accent); color: white; border: none; padding: 12px; border-radius: 6px; font-weight: bold; cursor: pointer; transition: 0.2s; }
+        button:hover { filter: brightness(1.2); }
+        .btn-secondary { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
 
-        .instructions { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); 
-                        background: var(--glass); padding: 8px 20px; border-radius: 20px; font-size: 0.8rem; opacity: 0.8; }
+        #coords { position: absolute; bottom: 20px; right: 20px; font-family: monospace; font-size: 0.8rem; background: rgba(0,0,0,0.6); padding: 5px 15px; border-radius: 20px; }
     </style>
 </head>
 <body>
 
-    <div id="hud">
-        <h2 style="margin:0; font-size: 1.2rem; letter-spacing: 1px;">NUCLEUS <span style="font-weight:100">PRO</span></h2>
-        <p style="font-size: 0.8rem; opacity: 0.7;">Enterprise Spatial Cluster Engine v2.5</p>
+    <div id="sidebar">
+        <h2>Nucleus Engine</h2>
         
-        <div class="stat-grid">
-            <div class="stat-card"><span class="stat-val" id="nodeCount">0</span><span class="stat-label">Active Nodes</span></div>
-            <div class="stat-card"><span class="stat-val" id="zoomVal">1.0x</span><span class="stat-label">Zoom Level</span></div>
+        <div class="form-group">
+            <span class="section-title">Manual Data Entry</span>
+            <input type="text" id="pLabel" placeholder="Label (e.g. Node A)">
+            <div style="display:grid; grid-template-columns: 1fr 1fr; gap:5px;">
+                <input type="number" id="pX" placeholder="X Coord">
+                <input type="number" id="pY" placeholder="Y Coord">
+            </div>
+            <select id="pCat">
+                <option value="Tech">Tech (Blue)</option>
+                <option value="Finance">Finance (Green)</option>
+                <option value="Health">Health (Red)</option>
+            </select>
+            <button id="addManualBtn">Add Point</button>
         </div>
 
-        <button id="clearBtn" style="width:100%; margin-top: 20px; padding: 10px; background: var(--accent); border: none; color: white; border-radius: 8px; cursor:pointer;">Initialize Wipe</button>
+        <div class="form-group">
+            <span class="section-title">Global Adjustments</span>
+            <label style="font-size: 0.7rem;">Rotation Offset</label>
+            <input type="range" id="rotRange" min="0" max="360" value="0">
+            <label style="font-size: 0.7rem;">Fusion Radius</label>
+            <input type="range" id="radRange" min="10" max="150" value="50">
+        </div>
+
+        <button id="downloadBtn" class="btn-secondary">Export Chart (.PNG)</button>
+        <button id="clearBtn" class="btn-secondary" style="border-color: #ef4444; color: #ef4444;">Clear All</button>
     </div>
 
-    <div class="instructions">SCROLL to Zoom • CLICK to Seed Data • DRAG to Explore</div>
-
-    <canvas id="world"></canvas>
+    <div id="canvas-container">
+        <canvas id="world"></canvas>
+        <div id="coords">X: 0 | Y: 0 | Zoom: 1.0x</div>
+    </div>
 
     <script type="module">
         import { Nucleus } from './index.js';
 
         const canvas = document.getElementById('world');
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        canvas.width = canvas.clientWidth;
+        canvas.height = canvas.clientHeight;
 
-        const data = [
-            { x: window.innerWidth/2, y: window.innerHeight/2, label: "CENTRAL_CORE", category: "Tech" },
-            { x: window.innerWidth/2, y: window.innerHeight/2, label: "BACKUP_NODE", category: "Finance" }
-        ];
+        const data = [{ x: 0, y: 0, label: "ORIGIN", category: "Tech", weight: 3 }];
+        const colors = { 'Tech': '#60a5fa', 'Finance': '#4ade80', 'Health': '#f87171', 'Default': '#818cf8' };
 
-        const chart = new Nucleus('#world', { 
-            categoryColors: { 'Tech': '#60a5fa', 'Finance': '#4ade80' } 
-        });
-
-        // Start the continuous render loop
+        const chart = new Nucleus('#world', { categoryColors: colors });
         chart.render(data);
 
-        // Update HUD Stats
-        setInterval(() => {
-            document.getElementById('nodeCount').innerText = data.length;
-            document.getElementById('zoomVal').innerText = chart.camera.zoom.toFixed(1) + 'x';
-        }, 100);
+        // UI Handlers
+        document.getElementById('addManualBtn').onclick = () => {
+            const label = document.getElementById('pLabel').value || "ManualEntry";
+            const x = parseFloat(document.getElementById('pX').value) || 0;
+            const y = parseFloat(document.getElementById('pY').value) || 0;
+            const category = document.getElementById('pCat').value;
+            data.push({ x, y, label, category, weight: 3 });
+            chart.render(data);
+        };
 
-        canvas.addEventListener('mousedown', (e) => {
-            // Adjust for Camera Zoom/Offset if you want perfect placement
-            data.push({ x: e.clientX, y: e.clientY, label: "NEW_DATA_STREAM", category: "Tech" });
-        });
+        canvas.onmousedown = () => {
+            data.push({ x: chart.mouse.worldX, y: chart.mouse.worldY, label: "SEED_"+data.length, category: "Default", weight: 2 });
+        };
+
+        document.getElementById('rotRange').oninput = (e) => chart.rotationOffset = e.target.value;
+        document.getElementById('radRange').oninput = (e) => chart.fusionRadius = e.target.value;
+        document.getElementById('clearBtn').onclick = () => { data.length = 0; chart.render(data); };
+
+        // Export Function
+        document.getElementById('downloadBtn').onclick = () => {
+            const link = document.createElement('a');
+            link.download = 'nucleus-chart-export.png';
+            link.href = canvas.toDataURL();
+            link.click();
+        };
+
+        // HUD Stats
+        const coords = document.getElementById('coords');
+        function updateHUD() {
+            coords.innerText = `X: ${Math.round(chart.mouse.worldX)} | Y: ${Math.round(chart.mouse.worldY)} | Zoom: ${chart.camera.zoom.toFixed(2)}x`;
+            requestAnimationFrame(updateHUD);
+        }
+        updateHUD();
     </script>
 </body>
 </html>
