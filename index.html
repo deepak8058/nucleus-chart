@@ -53,59 +53,58 @@
     </div>
 
     <script type="module">
-        import { Nucleus } from './index.js';
+    import { Nucleus } from './index.js';
 
-        const canvas = document.getElementById('nucleusCanvas');
-        const radiusInput = document.getElementById('radiusRange');
-        const spokeInput = document.getElementById('spokeRange');
-        const clearBtn = document.getElementById('clearBtn');
-        
-        let dataPoints = [
-            { x: 450, y: 300, label: "Core Feature Alpha" },
-            { x: 450, y: 300, label: "Secondary Module Beta" },
-            { x: 600, y: 150, label: "Isolated Node" }
-        ];
+    // 1. Define Galactic Categories
+    const categoryColors = {
+        'Finance': '#4ade80', // Solar Green
+        'Tech': '#60a5fa',    // Nebula Blue
+        'Health': '#f87171',  // Nova Red
+        'default': '#818cf8'
+    };
 
-        let chart = new Nucleus('#nucleusCanvas', { 
-            fusionRadius: parseInt(radiusInput.value), 
-            spokeLength: parseInt(spokeInput.value),
-            hubColor: '#818cf8', // Indigo hub
-            labelColor: '#ffffff' // Pure white labels
+    // 2. Mock Data with Categories & Weights
+    let dataPoints = [
+        { x: 300, y: 300, label: "Bank Alpha", category: "Finance", weight: 5 },
+        { x: 300, y: 300, label: "Server Beta", category: "Tech", weight: 2 },
+        { x: 300, y: 300, label: "Cloud Gamma", category: "Tech", weight: 3 },
+        { x: 650, y: 400, label: "Clinic Delta", category: "Health", weight: 4 },
+        { x: 650, y: 400, label: "Lab Epsilon", category: "Health", weight: 2 }
+    ];
+
+    // 3. Initialize Chart
+    const canvas = document.getElementById('nucleusCanvas');
+    const radiusInput = document.getElementById('radiusRange');
+    const spokeInput = document.getElementById('spokeRange');
+    const rotationInput = document.getElementById('rotationRange');
+
+    let chart = new Nucleus('#nucleusCanvas', { 
+        categoryColors: categoryColors,
+        fusionRadius: parseInt(radiusInput.value),
+        spokeLength: parseInt(spokeInput.value),
+        rotationOffset: parseInt(rotationInput.value)
+    });
+
+    chart.render(dataPoints);
+
+    // 4. Listeners for Interaction
+    canvas.addEventListener('mousedown', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const cats = Object.keys(categoryColors);
+        dataPoints.push({
+            x: e.clientX - rect.left,
+            y: e.clientY - rect.top,
+            label: "NEW SYSTEM",
+            category: cats[Math.floor(Math.random() * cats.length)],
+            weight: Math.floor(Math.random() * 5) + 1
         });
-
-        // Initial Render
         chart.render(dataPoints);
+    });
 
-        // Interaction: Add Point on Click
-        canvas.addEventListener('mousedown', (e) => {
-            const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            
-            dataPoints.push({
-                x: x,
-                y: y,
-                label: `Entry #${dataPoints.length + 1}`
-            });
-            
-            chart.render(dataPoints);
-        });
+    radiusInput.addEventListener('input', (e) => { chart.fusionRadius = e.target.value; chart.render(dataPoints); });
+    spokeInput.addEventListener('input', (e) => { chart.spokeLength = e.target.value; chart.render(dataPoints); });
+    rotationInput.addEventListener('input', (e) => { chart.rotationOffset = e.target.value; chart.render(dataPoints); });
+</script>
 
-        // Handle Controls
-        radiusInput.addEventListener('input', (e) => {
-            chart.fusionRadius = parseInt(e.target.value);
-            chart.render(dataPoints);
-        });
-
-        spokeInput.addEventListener('input', (e) => {
-            chart.spokeLength = parseInt(e.target.value);
-            chart.render(dataPoints);
-        });
-
-        clearBtn.addEventListener('click', () => {
-            dataPoints = [];
-            chart.render(dataPoints);
-        });
-    </script>
 </body>
 </html>
